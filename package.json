@@ -1,0 +1,23 @@
+{
+  "name": "pi-goon",
+  "version": "0.1.0",
+  "description": "Resume a Pi session invisibly with /goon, without a new prompt for the model",
+  "type": "module",
+  "author": "vimsucks",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vimsucks/pi-goon.git"
+  },
+  "keywords": ["pi-package", "pi-extension", "continue", "resume"],
+  "files": ["goon.ts", "src/", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test test.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=1.0.0"
+  },
+  "pi": {
+    "extensions": ["./goon.ts"]
+  }
+}
