@@ -1,4 +1,4 @@
-# pi-goon
+# @vimsucks/pi-goon
 
 通过 `/goon` 继续当前 Pi 会话，不向模型发送新的继续提示词。
 
@@ -6,8 +6,16 @@
 
 要求 Pi 1.0.0 或更新版本。
 
+当前可以从 GitHub 安装：
+
 ```sh
 pi install git:github.com/vimsucks/pi-goon
+```
+
+npm 包名为 `@vimsucks/pi-goon`。发布到 npm 后，可以使用以下命令安装：
+
+```sh
+pi install npm:@vimsucks/pi-goon
 ```
 
 安装后，在当前会话执行 `/reload`，或重新启动 Pi。
