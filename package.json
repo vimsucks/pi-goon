@@ -1,6 +1,6 @@
 {
   "name": "pi-goon",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Resume a Pi session invisibly with /goon, without a new prompt for the model",
   "type": "module",
   "author": "vimsucks",

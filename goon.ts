@@ -1,9 +1,10 @@
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
   CONTINUE_COMMAND_DESCRIPTION,
   INVISIBLE_CONTINUE_CUSTOM_TYPE,
   getLastAssistantMessageText,
   isInvisibleContinueMarker,
+  readShortcut,
   stripTrailingIncompleteAssistants,
 } from "./src/index.ts";
 
@@ -13,6 +14,13 @@ import {
  * the context hook removes it before provider serialization.
  */
 export default function invisibleContinueExtension(pi: ExtensionAPI) {
+  const shortcut = readShortcut();
+  if (shortcut !== null) {
+    pi.registerShortcut(shortcut, {
+      description: CONTINUE_COMMAND_DESCRIPTION,
+      handler: (ctx) => runContinueCommand(pi, ctx, ""),
+    });
+  }
   pi.on("context", (event) => {
     const hasMarker = event.messages.some((message) => isInvisibleContinueMarker(message));
     const messages = event.messages.filter((message) => !isInvisibleContinueMarker(message));
@@ -30,7 +38,7 @@ export default function invisibleContinueExtension(pi: ExtensionAPI) {
 
 function runContinueCommand(
   pi: ExtensionAPI,
-  ctx: ExtensionCommandContext,
+  ctx: ExtensionContext,
   args: string,
 ): void {
   const subcommand = args.trim().toLowerCase();

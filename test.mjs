@@ -1,15 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import extension from "./goon.ts";
-import { INVISIBLE_CONTINUE_CUSTOM_TYPE } from "./src/index.ts";
+import { INVISIBLE_CONTINUE_CUSTOM_TYPE, readShortcut } from "./src/index.ts";
 
-test("/goon resumes invisibly and preserves tool-call pairs", async () => {
+test("/goon resumes invisibly and preserves tool-call pairs", async (t) => {
+  const agentDir = mkdtempSync(join(tmpdir(), "pi-goon-test-"));
+  const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = agentDir;
+  t.after(() => {
+    if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
+    rmSync(agentDir, { recursive: true, force: true });
+  });
+  const shortcuts = new Map();
   const commands = new Map();
   const hooks = new Map();
   const sent = [];
   const notifications = [];
   extension({
     registerCommand: (name, command) => commands.set(name, command),
+    registerShortcut: (key, shortcut) => shortcuts.set(key, shortcut),
     on: (name, handler) => hooks.set(name, handler),
     sendMessage: (...args) => sent.push(args),
   });
@@ -63,4 +76,39 @@ test("/goon resumes invisibly and preserves tool-call pairs", async () => {
   assert.equal(notifications.length, 2);
   assert.ok(notifications[1][0].includes("/goon"));
   assert.ok(!notifications[1][0].includes("/continue"));
+
+  assert.deepEqual([...shortcuts.keys()], ["alt+g"]);
+  await shortcuts.get("alt+g").handler(ctx);
+  assert.deepEqual(sent[1], sent[0]);
+
+  const configPath = join(agentDir, "goon.json");
+  const setConfig = (config) => writeFileSync(configPath, JSON.stringify(config));
+  for (const key of ["ctrl+alt+g", "f6", "alt+pageUp", "ctrl++"]) {
+    setConfig({ shortcut: key });
+    assert.equal(readShortcut(), key);
+  }
+  setConfig({ shortcut: "ctrl+alt+g" });
+  const custom = new Map();
+  const api = {
+    on: () => {}, registerCommand: () => {},
+    registerShortcut: (key, shortcut) => custom.set(key, shortcut),
+    sendMessage: (...args) => sent.push(args),
+  };
+  extension(api);
+  assert.deepEqual([...custom.keys()], ["ctrl+alt+g"]);
+  await custom.get("ctrl+alt+g").handler(ctx);
+  assert.deepEqual(sent[2], sent[0]);
+  setConfig({ shortcut: null });
+  custom.clear();
+  extension(api);
+  assert.equal(custom.size, 0);
+  setConfig({});
+  assert.equal(readShortcut(), "alt+g");
+  for (const config of [null, [], { shortcut: false }, { shortcut: "" },
+    { shortcut: "not-a-key" }, { shortcut: "ctrl+ctrl+g" }]) {
+    setConfig(config);
+    assert.throws(() => readShortcut(), /goon\.json/);
+  }
+  writeFileSync(configPath, "{");
+  assert.throws(() => readShortcut(), /Cannot read/);
 });

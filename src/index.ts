@@ -1,5 +1,43 @@
 /** Shared constants and utilities for pi-goon. */
 
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+
+export function readShortcut(): Parameters<ExtensionAPI["registerShortcut"]>[0] | null {
+  const agentDir = process.env.PI_CODING_AGENT_DIR?.replace(/^~(?=$|[\\/])/, homedir())
+    || join(homedir(), ".pi", "agent");
+  const path = join(agentDir, "goon.json");
+  let config: unknown;
+  try {
+    config = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "alt+g";
+    throw new Error(`Cannot read ${path}`, { cause: error });
+  }
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    throw new Error(`${path} must contain a JSON object`);
+  }
+  const shortcut = (config as { shortcut?: unknown }).shortcut;
+  if (shortcut === undefined) return "alt+g";
+  if (shortcut === null) return null;
+  if (typeof shortcut === "string") {
+    const match = /^((?:(?:ctrl|shift|alt|super)\+)*)(.+)$/.exec(shortcut);
+    if (match) {
+      const modifiers = match[1].split("+").filter(Boolean);
+      const key = match[2];
+      const validKey = /^[a-z0-9]$/.test(key)
+        || (key.length === 1 && "`-=[]\\;',./!@#$%^&*()_+|~{}:<>?".includes(key))
+        || /^(escape|esc|enter|return|tab|space|backspace|delete|insert|clear|home|end|pageUp|pageDown|up|down|left|right|f[1-9]|f1[0-2])$/.test(key);
+      if (validKey && new Set(modifiers).size === modifiers.length) {
+        return shortcut as Parameters<ExtensionAPI["registerShortcut"]>[0];
+      }
+    }
+  }
+  throw new Error(`${path}: shortcut must be a Pi key identifier (e.g. alt+g) or null`);
+}
+
 export const CONTINUE_COMMAND_DESCRIPTION =
   "Resume the agentic loop without sending a prompt the LLM can read";
 
