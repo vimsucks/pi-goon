@@ -24,17 +24,21 @@ pi install git:github.com/vimsucks/pi-goon
 
 默认快捷键为 `Alt+G`，行为与 `/goon` 相同。快捷键不会提交或清空输入框中的文字。运行 `/hotkeys` 可以检查 Pi 当前启用的快捷键。
 
-要修改快捷键，在 `~/.pi/agent/goon.json` 中写入：
+要修改快捷键，在 `~/.pi/agent/settings.json` 中添加 `goon` 配置，保留已有的其他字段：
 
 ```json
 {
-  "shortcut": "ctrl+alt+g"
+  "goon": {
+    "shortcut": "ctrl+alt+g"
+  }
 }
 ```
 
-`shortcut` 使用 Pi 按键标识符，例如 `alt+g`、`ctrl+alt+g` 或 `f6`。设为 `null` 可以禁用快捷键，`/goon` 命令仍然可用。缺少配置文件或 `shortcut` 字段时，扩展使用 `alt+g`。
+`goon.shortcut` 使用 Pi 按键标识符，例如 `alt+g`、`ctrl+alt+g` 或 `f6`。设为 `null` 可以禁用快捷键，`/goon` 命令仍然可用。缺少配置文件或 `goon.shortcut` 字段时，扩展使用 `alt+g`。
 
-如果设置了 `PI_CODING_AGENT_DIR`，配置文件位于该目录下的 `goon.json`。配置仅作用于当前用户，不读取项目配置。修改配置后，执行 `/reload`。如果配置无效，Pi 会报告加载错误；修正配置后再次执行 `/reload`。
+扩展不再读取旧的 `goon.json`。如果已有该文件，将其中的 `shortcut` 值迁入 `settings.json` 的 `goon.shortcut` 字段。
+
+如果设置了 `PI_CODING_AGENT_DIR`，配置文件位于该目录下的 `settings.json`。配置仅作用于当前用户，不读取项目配置。修改配置后，执行 `/reload`。如果配置无效，Pi 会报告加载错误；修正配置后再次执行 `/reload`。
 
 快捷键由 Pi 原生机制处理。与其他快捷键冲突时，按 Pi 的冲突规则处理。macOS 终端需要将 Option 配置为 Alt/Meta，才能发送 `Alt+G`。
 

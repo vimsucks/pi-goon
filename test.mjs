@@ -81,8 +81,8 @@ test("/goon resumes invisibly and preserves tool-call pairs", async (t) => {
   await shortcuts.get("alt+g").handler(ctx);
   assert.deepEqual(sent[1], sent[0]);
 
-  const configPath = join(agentDir, "goon.json");
-  const setConfig = (config) => writeFileSync(configPath, JSON.stringify(config));
+  const configPath = join(agentDir, "settings.json");
+  const setConfig = (config) => writeFileSync(configPath, JSON.stringify({ retry: { maxRetries: 10 }, goon: config }));
   for (const key of ["ctrl+alt+g", "f6", "alt+pageUp", "ctrl++"]) {
     setConfig({ shortcut: key });
     assert.equal(readShortcut(), key);
@@ -104,10 +104,17 @@ test("/goon resumes invisibly and preserves tool-call pairs", async (t) => {
   assert.equal(custom.size, 0);
   setConfig({});
   assert.equal(readShortcut(), "alt+g");
+  writeFileSync(configPath, JSON.stringify({ retry: { maxRetries: 10 } }));
+  writeFileSync(join(agentDir, "goon.json"), JSON.stringify({ shortcut: "f6" }));
+  assert.equal(readShortcut(), "alt+g");
+  for (const value of [null, [], "bad settings"]) {
+    writeFileSync(configPath, JSON.stringify(value));
+    assert.throws(() => readShortcut(), /settings\.json/);
+  }
   for (const config of [null, [], { shortcut: false }, { shortcut: "" },
     { shortcut: "not-a-key" }, { shortcut: "ctrl+ctrl+g" }]) {
     setConfig(config);
-    assert.throws(() => readShortcut(), /goon\.json/);
+    assert.throws(() => readShortcut(), /settings\.json/);
   }
   writeFileSync(configPath, "{");
   assert.throws(() => readShortcut(), /Cannot read/);

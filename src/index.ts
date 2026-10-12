@@ -8,7 +8,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export function readShortcut(): Parameters<ExtensionAPI["registerShortcut"]>[0] | null {
   const agentDir = process.env.PI_CODING_AGENT_DIR?.replace(/^~(?=$|[\\/])/, homedir())
     || join(homedir(), ".pi", "agent");
-  const path = join(agentDir, "goon.json");
+  const path = join(agentDir, "settings.json");
   let config: unknown;
   try {
     config = JSON.parse(readFileSync(path, "utf8"));
@@ -19,7 +19,12 @@ export function readShortcut(): Parameters<ExtensionAPI["registerShortcut"]>[0] 
   if (!config || typeof config !== "object" || Array.isArray(config)) {
     throw new Error(`${path} must contain a JSON object`);
   }
-  const shortcut = (config as { shortcut?: unknown }).shortcut;
+  const goon = (config as { goon?: unknown }).goon;
+  if (goon === undefined) return "alt+g";
+  if (!goon || typeof goon !== "object" || Array.isArray(goon)) {
+    throw new Error(`${path}: goon must be a JSON object`);
+  }
+  const shortcut = (goon as { shortcut?: unknown }).shortcut;
   if (shortcut === undefined) return "alt+g";
   if (shortcut === null) return null;
   if (typeof shortcut === "string") {
@@ -35,7 +40,7 @@ export function readShortcut(): Parameters<ExtensionAPI["registerShortcut"]>[0] 
       }
     }
   }
-  throw new Error(`${path}: shortcut must be a Pi key identifier (e.g. alt+g) or null`);
+  throw new Error(`${path}: goon.shortcut must be a Pi key identifier (e.g. alt+g) or null`);
 }
 
 export const CONTINUE_COMMAND_DESCRIPTION =
